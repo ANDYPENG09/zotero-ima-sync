@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Zotero IMA Sync",
+  "version": "0.0.1",
+  "description": "将 Zotero 条目及其 PDF 附件同步到腾讯 ima 知识库（ima.qq.com），构建可检索的文献 RAG 知识库。适配 Zotero 7/8/9。",
+  "author": "Peng Yu",
+  "icons": {
+    "48": "icons/favicon.png",
+    "96": "icons/favicon.png"
+  },
+  "applications": {
+    "zotero": {
+      "id": "zotero-ima-sync@andypeng",
+      "strict_min_version": "7.0.0",
+      "strict_max_version": "9.*"
+    }
+  }
+}

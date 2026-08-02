@@ -1,0 +1,34 @@
+# ---- Python / build ----
+__pycache__/
+*.py[cod]
+build/
+dist/
+
+# ---- Build artifacts (xpi packages) ----
+*.xpi
+
+# ---- Local diagnostic / test artifacts ----
+SELFTEST_RUN
+http_*.json
+http_listener.log
+real_verify_*.json
+.verify_*.js
+.test_*.js
+.probe_*.js
+.capture_*.js
+.http_listener.py
+
+# ---- Test profiles (local Zotero instances) ----
+realtest-*/
+profile-*/
+
+# ---- Third-party reference plugins (NOT redistributable) ----
+对照测试/
+plugin-ref-backup/
+
+# ---- Editor / OS ----
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db

@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <title>选择 ima 知识库</title>
+  <style>
+    body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6f8; color: #1f2329; font-size: 13px; }
+    .wrap { padding: 14px 18px; display: flex; flex-direction: column; height: 100vh; box-sizing: border-box; }
+    .tip { color: #8a919f; font-size: 12px; margin: 0 0 10px; line-height: 1.5; }
+    #kb-list { flex: 1; overflow-y: auto; border: 1px solid #e3e6eb; border-radius: 6px; background: #fff; min-height: 0; }
+    .kb-item { padding: 8px 12px; border-bottom: 1px solid #f0f1f4; cursor: pointer; }
+    .kb-item:last-child { border-bottom: none; }
+    .kb-item:hover { background: #f0f5ff; }
+    .kb-item.sel { background: #e8f0ff; outline: 1px solid #0052d9; }
+    .kb-name { font-weight: 600; }
+    .kb-id { color: #8a919f; font-size: 12px; word-break: break-all; margin-top: 2px; }
+    .empty { color: #8a919f; text-align: center; padding: 24px 0; }
+    .btns { margin-top: 12px; text-align: right; }
+    button {
+      border: none; border-radius: 4px; padding: 6px 18px; font-size: 13px; cursor: pointer; margin-left: 8px;
+    }
+    .btn-primary { background: #0052d9; color: #fff; }
+    .btn-primary:hover { background: #003c9e; }
+    .btn-primary:disabled { background: #a8bde0; cursor: not-allowed; }
+    .btn-plain { background: #eef0f3; color: #1f2329; }
+    .btn-plain:hover { background: #e2e5ea; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <p class="tip">请选择要同步到的目标知识库（括号内为 ima OpenAPI 编码串 ID）：</p>
+    <div id="kb-list"></div>
+    <div class="btns">
+      <button class="btn-plain" id="btn-cancel">取消</button>
+      <button class="btn-primary" id="btn-ok" disabled="disabled">确定</button>
+    </div>
+  </div>
+
+  <script type="text/javascript"><![CDATA[
+    (function () {
+      // 数据传递（Zotero 9 / Fx140 跨 chrome 窗口）：
+      //  1) URL 查询参数 ?kbs=<encodeURIComponent(JSON.stringify([{id,name},...]))>
+      //     —— 窗口自身 location 一定可读，主通道。
+      //  2) window.arguments[0] —— 备用通道。
+      //  独立 chrome 窗口里不一定有 Zotero 全局，故不依赖 Zotero.__imaSync。
+      var kbs = [];
+      var onPick = null;
+      var onCancel = null;
+
+      try {
+        var qs = window.location.search;
+        if (qs) {
+          var m = qs.match(/[?&]kbs=([^&]+)/);
+          if (m) {
+            var parsed = JSON.parse(decodeURIComponent(m[1]));
+            if (Array.isArray(parsed)) kbs = parsed;
+          }
+        }
+      } catch (e) {}
+
+      if (!kbs.length) {
+        try {
+          var arg0 = window.arguments && window.arguments[0];
+          if (arg0 && Array.isArray(arg0.kbs)) {
+            kbs = arg0.kbs;
+            onPick = arg0.onPick;
+            onCancel = arg0.onCancel;
+          }
+        } catch (e) {}
+      }
+
+      var listEl = document.getElementById("kb-list");
+      var okBtn = document.getElementById("btn-ok");
+      var cancelBtn = document.getElementById("btn-cancel");
+      var selected = null;
+
+      function setSelected(kb, el) {
+        selected = kb;
+        var items = listEl.querySelectorAll(".kb-item");
+        for (var i = 0; i < items.length; i++) {
+          items[i].classList.toggle("sel", items[i] === el);
+        }
+        okBtn.disabled = !selected;
+      }
+
+      function reportPick(kb) {
+        // 优先通过 opener 找父窗口注册的回调（URL 传参模式下唯一的回调通道）
+        try {
+          var op = window.opener;
+          if (op && op.Zotero && op.Zotero.__imaSync && op.Zotero.__imaSync._kbSelect) {
+            var cb = op.Zotero.__imaSync._kbSelect.onPick;
+            if (typeof cb === "function") { cb(kb); return; }
+          }
+        } catch (e) {}
+        // 兜底 window.arguments
+        try {
+          var arg0 = window.arguments && window.arguments[0];
+          if (arg0 && typeof arg0.onPick === "function") { arg0.onPick(kb); return; }
+        } catch (e) {}
+        if (onPick) onPick(kb);
+      }
+
+      function reportCancel() {
+        try {
+          var op = window.opener;
+          if (op && op.Zotero && op.Zotero.__imaSync && op.Zotero.__imaSync._kbSelect) {
+            var cb = op.Zotero.__imaSync._kbSelect.onCancel;
+            if (typeof cb === "function") { cb(); return; }
+          }
+        } catch (e) {}
+        try {
+          var arg0 = window.arguments && window.arguments[0];
+          if (arg0 && typeof arg0.onCancel === "function") { arg0.onCancel(); return; }
+        } catch (e) {}
+        if (onCancel) onCancel();
+      }
+
+      function cleanupOpener() {
+        try {
+          var op = window.opener;
+          if (op && op.Zotero && op.Zotero.__imaSync && op.Zotero.__imaSync._kbSelect) {
+            delete op.Zotero.__imaSync._kbSelect;
+          }
+        } catch (e) {}
+      }
+
+      function build() {
+        if (!kbs.length) {
+          var empty = document.createElement("div");
+          empty.className = "empty";
+          empty.textContent = "未获取到知识库";
+          listEl.appendChild(empty);
+          return;
+        }
+        kbs.forEach(function (kb, i) {
+          var item = document.createElement("div");
+          item.className = "kb-item" + (i === 0 ? " sel" : "");
+          var name = document.createElement("div");
+          name.className = "kb-name";
+          name.textContent = kb.name || "(未命名)";
+          var id = document.createElement("div");
+          id.className = "kb-id";
+          id.textContent = kb.id || "";
+          item.appendChild(name);
+          item.appendChild(id);
+          item.addEventListener("click", function () { setSelected(kb, item); });
+          item.addEventListener("dblclick", function () {
+            reportPick(kb);
+            cleanupOpener();
+            window.close();
+          });
+          listEl.appendChild(item);
+          if (i === 0) selected = kb;
+        });
+        if (kbs.length > 0) okBtn.disabled = false;
+      }
+
+      okBtn.addEventListener("click", function () {
+        if (selected) {
+          reportPick(selected);
+        }
+        cleanupOpener();
+        window.close();
+      });
+      cancelBtn.addEventListener("click", function () {
+        reportCancel();
+        cleanupOpener();
+        window.close();
+      });
+
+      build();
+    })();
+  ]]></script>
+</body>
+</html>

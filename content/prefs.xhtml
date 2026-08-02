@@ -1,0 +1,112 @@
+<!--
+  prefs.xhtml — IMA Sync 偏好设置面板（Zotero 7/8/9）
+  结构与 jasminum / zotero-format-metadata 一致：<linkset> + <vbox onload>（Zotero 面板为多根片段）。
+  控件通过 preference= 原生绑定 Zotero.Prefs；onload 调用 Zotero.__imaSync.prefsLoaded 写诊断日志。
+  注意：Zotero 9 用 parseXULToFragment 把本文件内容嵌到 <box> 里解析，因此不能有 <?xml?> 声明。
+-->
+<linkset></linkset>
+<vbox id="ima-sync-prefs"
+      xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
+      xmlns:html="http://www.w3.org/1999/xhtml"
+      onload="if (Zotero.__imaSync) Zotero.__imaSync.prefsLoaded(window);"
+      style="padding: 8px 4px; font-size: 13px;">
+
+  <!-- 认证：IMA Skills API Key（推荐） -->
+  <groupbox>
+    <label><html:h2 style="margin: 0 0 4px; font-size: 13px; color: #1f2329;">认证 · IMA Skills API Key（推荐）</html:h2></label>
+    <description style="color: #8a919f; font-size: 12px; margin: 2px 0 6px; max-width: 600px;">
+      打开 <html:b>ima.qq.com/agent-interface</html:b>（或 ima 客户端左下角头像 → 设置 → IMA Skills / 开发者选项），
+      生成 API Key，复制 <html:b>Client ID</html:b> 与 <html:b>Api Key</html:b>（格式 ima_sk_…）填入下方。
+      有效期约 1 个月，过期后重新生成即可。这正是 WorkBuddy「ima 知识库」连接器所用的凭证方式。
+    </description>
+    <hbox align="center" style="margin: 6px 0;">
+      <label style="min-width: 130px; color: #4b5563;">Client ID</label>
+      <html:input type="text"
+                  id="ima-sync-client-id"
+                  preference="extensions.zotero.imaSync.clientId"
+                  placeholder="粘贴 Client ID"
+                  style="width: 420px;"/>
+    </hbox>
+    <hbox align="center" style="margin: 6px 0;">
+      <label style="min-width: 130px; color: #4b5563;">Api Key</label>
+      <html:input type="password"
+                  id="ima-sync-api-key"
+                  preference="extensions.zotero.imaSync.apiKey"
+                  placeholder="粘贴 ima_sk_… 开头的 Api Key"
+                  style="width: 420px;"/>
+    </hbox>
+  </groupbox>
+
+  <!-- 目标知识库 -->
+  <groupbox>
+    <label><html:h2 style="margin: 0 0 4px; font-size: 13px; color: #1f2329;">目标知识库</html:h2></label>
+    <hbox align="center" style="margin: 6px 0;">
+      <label style="min-width: 130px; color: #4b5563;">知识库 ID</label>
+      <html:input type="text"
+                  id="ima-sync-kb-id"
+                  preference="extensions.zotero.imaSync.knowledgeBaseId"
+                  placeholder="点「获取我的知识库」自动填入，无需手填"
+                  style="width: 260px;"/>
+      <button label="获取我的知识库"
+              oncommand="Zotero.__imaSync.loadKBs(window);"
+              style="margin-left: 8px;"/>
+    </hbox>
+    <description style="color: #8a919f; font-size: 12px; margin: 2px 0 6px 130px; max-width: 520px;">
+      先填好上方 Client ID / Api Key，再点「获取我的知识库」自动列出并填入；也可手动填写。
+    </description>
+
+    <hbox align="center" style="margin: 6px 0;">
+      <label style="min-width: 130px; color: #4b5563;">重名策略</label>
+      <menulist preference="extensions.zotero.imaSync.duplicateStrategy">
+        <menupopup>
+          <menuitem value="DUPLICATE_NAME_STRATEGY_SAVE" label="保留两个（SAVE）"/>
+          <menuitem value="DUPLICATE_NAME_STRATEGY_REPLACE" label="覆盖（REPLACE）"/>
+          <menuitem value="DUPLICATE_NAME_STRATEGY_CANCEL" label="跳过（CANCEL）"/>
+        </menupopup>
+      </menulist>
+    </hbox>
+    <description style="color: #8a919f; font-size: 12px; margin: 2px 0 6px 130px; max-width: 520px;">
+      同名文件再次同步时的处理方式。首次同步建议 SAVE，重复同步用 REPLACE。
+    </description>
+  </groupbox>
+
+  <!-- 高级 -->
+  <groupbox>
+    <label><html:h2 style="margin: 0 0 4px; font-size: 13px; color: #1f2329;">高级</html:h2></label>
+    <hbox align="center" style="margin: 6px 0;">
+      <label style="min-width: 130px; color: #4b5563;">目标文件夹 ID（可选）</label>
+      <html:input type="text"
+                  preference="extensions.zotero.imaSync.folderId"
+                  placeholder="留空则放入知识库根目录"
+                  style="width: 340px;"/>
+    </hbox>
+    <hbox align="center" style="margin: 6px 0;">
+      <checkbox label="强制重传（忽略已同步标记）"
+                preference="extensions.zotero.imaSync.forceResync"/>
+    </hbox>
+
+    <html:details style="margin: 8px 0 0 130px; max-width: 520px;">
+      <html:summary style="cursor: pointer; color: #4b5563;">Bearer token（旧/高级回退模式，一般无需填写）</html:summary>
+      <description style="color: #8a919f; font-size: 12px; margin: 6px 0; display: block;">
+        仅当无法使用 IMA Skills API Key 时使用。Bearer token 从 ima 网页版 DevTools → Network 面板
+        的 <html:b>Authorization: Bearer</html:b> 请求头获取，会随会话过期（数小时~数天），不稳定。
+      </description>
+      <hbox align="center" style="margin: 6px 0;">
+        <label style="min-width: 80px; color: #4b5563;">Bearer token</label>
+        <html:input type="password"
+                    id="ima-sync-token"
+                    preference="extensions.zotero.imaSync.token"
+                    style="width: 360px;"/>
+      </hbox>
+      <hbox align="center" style="margin: 6px 0;">
+        <label style="min-width: 80px; color: #4b5563;">API 模式</label>
+        <menulist id="ima-sync-api-mode" preference="extensions.zotero.imaSync.apiMode">
+          <menupopup>
+            <menuitem value="openapi" label="OpenAPI（推荐）"/>
+            <menuitem value="mcp" label="MCP"/>
+          </menupopup>
+        </menulist>
+      </hbox>
+    </html:details>
+  </groupbox>
+</vbox>

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Zotero IMA Sync 控制面板</title>
+  <style>
+    body { font-family: "Segoe UI", "Microsoft YaHei", sans-serif; margin: 0; background: #f5f6f8; color: #1f2329; font-size: 13px; }
+    .wrap { padding: 16px 20px; }
+    h1 { font-size: 16px; margin: 0 0 4px; }
+    .sub { color: #8a919f; font-size: 12px; margin-bottom: 14px; }
+    section { background: #fff; border: 1px solid #e3e6eb; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; }
+    section h2 { font-size: 13px; margin: 0 0 10px; color: #4b5563; font-weight: 600; }
+    label { display: inline-block; min-width: 110px; color: #4b5563; }
+    input[type="text"], input[type="password"], select {
+      width: 300px; box-sizing: border-box; border: 1px solid #c9ced6; border-radius: 4px;
+      padding: 5px 8px; font-size: 13px; background: #fff; color: #1f2329;
+    }
+    .row { margin-bottom: 8px; }
+    .row:last-child { margin-bottom: 0; }
+    button {
+      border: none; border-radius: 4px; padding: 6px 14px; font-size: 13px; cursor: pointer;
+    }
+    .btn-primary { background: #0052d9; color: #fff; }
+    .btn-primary:hover { background: #003c9e; }
+    .btn-plain { background: #eef0f3; color: #1f2329; }
+    .btn-plain:hover { background: #e2e5ea; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+    .hint { color: #8a919f; font-size: 12px; margin: 4px 0 0 110px; line-height: 1.5; }
+    .radio-group { display: inline-block; }
+    .radio-group label { min-width: 0; margin-right: 14px; }
+    #kbList { margin-top: 8px; }
+    #log {
+      background: #1e2228; color: #cfe3ff; border-radius: 6px; padding: 10px 12px;
+      font-family: Consolas, "Courier New", monospace; font-size: 12px;
+      height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all;
+    }
+    .log-ok { color: #7ee2a8; }
+    .log-err { color: #ff9d9d; }
+    .log-skip { color: #ffd77e; }
+    .bar { height: 6px; background: #e3e6eb; border-radius: 3px; margin: 8px 0; overflow: hidden; }
+    .bar > div { height: 100%; width: 0; background: #0052d9; transition: width .3s; }
+    .stat { color: #4b5563; font-size: 12px; margin-top: 4px; }
+    a { color: #0052d9; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Zotero IMA 同步</h1>
+    <div class="sub">将 Zotero 条目 PDF 同步到腾讯 ima 知识库（ima.qq.com），构建可检索的文献 RAG 库。</div>
+
+    <section>
+      <h2>认证 · IMA Skills API Key（推荐）</h2>
+      <div class="row">
+        <label for="clientId">Client ID</label>
+        <input type="text" id="clientId" placeholder="粘贴 IMA Skills Client ID" autocomplete="off"/>
+      </div>
+      <div class="row">
+        <label for="apiKey">Api Key</label>
+        <input type="password" id="apiKey" placeholder="粘贴 ima_sk_… 开头的 Api Key" autocomplete="off"/>
+      </div>
+      <div class="row">
+        <label for="token">Bearer token（可选）</label>
+        <input type="password" id="token" placeholder="旧版 Bearer token，留空则用上方 API Key" autocomplete="off"/>
+      </div>
+      <div class="hint">
+        获取方法：登录 <a href="https://ima.qq.com/agent-interface" target="_blank">ima.qq.com/agent-interface</a>
+        （或 ima 客户端左下角头像 → 设置 → IMA Skills / 开发者选项）→ 生成 API Key → 复制 Client ID 与 Api Key。
+        有效期约 1 个月，过期后重新生成即可。这正是 WorkBuddy「ima 知识库」连接器所用的凭证方式。
+        <br/>（如需使用旧版 Bearer token，可在本框或插件设置面板「高级」中填写。）
+      </div>
+    </section>
+
+    <section>
+      <h2>目标知识库</h2>
+      <div class="row">
+        <label for="kbId">知识库 ID</label>
+        <input type="text" id="kbId" placeholder="点「获取我的知识库」自动填入，无需手填"/>
+        <button class="btn-plain" id="btnLoadKb" style="margin-left:8px;">获取我的知识库</button>
+      </div>
+      <div class="hint">也可点击「获取我的知识库」自动列出可选库并填入。</div>
+      <div id="kbList"></div>
+      <div class="row" style="margin-top:8px;">
+        <label for="dup">重名策略</label>
+        <select id="dup">
+          <option value="DUPLICATE_NAME_STRATEGY_SAVE">保留两个（SAVE）</option>
+          <option value="DUPLICATE_NAME_STRATEGY_REPLACE">覆盖（REPLACE）</option>
+          <option value="DUPLICATE_NAME_STRATEGY_CANCEL">跳过（CANCEL）</option>
+        </select>
+      </div>
+      <div class="hint">同名文件再次同步时的处理方式。建议首次同步用 SAVE，重复同步用 REPLACE。</div>
+      <div class="row">
+        <label for="apiMode">API 模式</label>
+        <select id="apiMode">
+          <option value="openapi">OpenAPI（推荐）</option>
+          <option value="mcp">MCP</option>
+        </select>
+      </div>
+      <div class="hint">仅当在插件设置面板「高级」中改用 Bearer token 时才生效（默认 IMA Skills API Key 模式无需关注此选项）。</div>
+    </section>
+
+    <section>
+      <h2>同步范围</h2>
+      <div class="row">
+        <label style="min-width:0;">范围</label>
+        <div class="radio-group">
+          <label><input type="radio" name="scope" value="selected" checked="checked"/> 当前选中的条目</label>
+          <label><input type="radio" name="scope" value="collection"/> 某个 Collection</label>
+          <label><input type="radio" name="scope" value="all"/> 全部条目</label>
+        </div>
+      </div>
+      <div class="row" id="collectionRow" style="display:none;">
+        <label for="collectionSelect">选择 Collection</label>
+        <select id="collectionSelect" style="width:300px;"></select>
+      </div>
+      <div class="row">
+        <label style="min-width:0;"><input type="checkbox" id="forceResync"/> 强制重传（忽略已同步标记）</label>
+      </div>
+    </section>
+
+    <section>
+      <h2>同步</h2>
+      <button class="btn-primary" id="btnSync">开始同步</button>
+      <button class="btn-plain" id="btnStop" disabled="disabled">停止</button>
+      <div class="bar" id="bar"><div id="barFill"></div></div>
+      <div class="stat" id="stat"></div>
+      <div id="log"></div>
+    </section>
+  </div>
+
+  <script type="text/javascript"><![CDATA[
+    // Zotero 9 中独立 chrome 窗口没有 Zotero 全局；openPane 以主窗口为 parent
+    // 打开本窗口，这里通过 window.opener 桥接出 Zotero，供下方脚本使用。
+    if (typeof Zotero === "undefined") {
+      try {
+        if (window.opener && window.opener.Zotero) {
+          window.Zotero = window.opener.Zotero;
+        }
+      } catch (e) {}
+    }
+  ]]></script>
+  <script type="text/javascript" src="imaClient.js"></script>
+  <script type="text/javascript" src="cosUploader.js"></script>
+  <script type="text/javascript" src="config.js"></script>
+  <script type="text/javascript" src="syncEngine.js"></script>
+  <script type="text/javascript" src="pane.js"></script>
+</body>
+</html>
