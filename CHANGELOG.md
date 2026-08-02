@@ -15,7 +15,7 @@ real-runtime verification against Zotero 9 (Firefox ESR 140).
 - Sync Zotero items with PDF attachments to a Tencent ima knowledge base
   - Pipeline: `create_media` → upload to Tencent Cloud COS (prefers `cos_url` direct PUT,
     falls back to COS V5 signed upload with pure-JS SHA-1 fallback) → `add_knowledge`
-- IMA Skills API Key authentication (default, recommended; same source as WorkBuddy)
+- IMA Skills API Key authentication (default, recommended)
   - Legacy Bearer token / MCP mode retained as advanced fallback
 - Three sync scopes: selected items / a Collection / all items
 - Duplicate-name strategy: SAVE / REPLACE / CANCEL

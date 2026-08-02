@@ -17,7 +17,7 @@ A Zotero plugin that syncs your Zotero items and their **PDF attachments** to th
 - Prefers the `cos_url` returned by `create_media` (pre-signed / gateway URL); falls back to COS V5 signed upload
 - Synced items are marked in the Zotero `Extra` field with `ima-sync-media-id`, so repeat syncs are **automatically skipped** (optional "force re-sync" checkbox)
 - Duplicate-name strategy: Keep both (SAVE) / Replace (REPLACE) / Skip (CANCEL)
-- API mode: OpenAPI (default, same channel as the WorkBuddy client) / MCP
+- API mode: OpenAPI (default) / MCP
 - Real-time progress window (per-item success / skipped / failure status)
 
 ## Installation
@@ -30,7 +30,7 @@ A Zotero plugin that syncs your Zotero items and their **PDF attachments** to th
 
 ## Configuration (two steps)
 
-### 1. Get an IMA Skills API Key (recommended, same source as WorkBuddy)
+### 1. Get an IMA Skills API Key (recommended)
 
 1. Open [ima.qq.com/agent-interface](https://ima.qq.com/agent-interface) in a browser
    (or in the ima client: avatar at bottom-left → Settings → **IMA Skills** / developer options)
@@ -131,7 +131,7 @@ python build.py
 - 上传优先使用 `create_media` 返回的 `cos_url`（预签名/网关地址）；未返回时回退 COS V5 签名上传
 - 已同步条目自动在 Zotero `Extra` 字段记录 `ima-sync-media-id`，重复同步自动跳过（可勾选强制重传）
 - 重名策略可选：保留两个（SAVE）/ 覆盖（REPLACE）/ 跳过（CANCEL）
-- API 模式可选：OpenAPI（默认，与 WorkBuddy 客户端同款通道）/ MCP
+- API 模式可选：OpenAPI（默认）/ MCP
 - 实时进度窗口（成功 / 跳过 / 失败逐条显示）
 
 ## 安装
@@ -146,7 +146,7 @@ python build.py
 
 ## 配置（只需两步）
 
-### 1. 获取 IMA Skills API Key（推荐，与 WorkBuddy 同源）
+### 1. 获取 IMA Skills API Key（推荐）
 
 1. 浏览器打开 [ima.qq.com/agent-interface](https://ima.qq.com/agent-interface)
    （或在 ima 客户端：左下角头像 → 设置 → **IMA Skills** / 开发者选项）

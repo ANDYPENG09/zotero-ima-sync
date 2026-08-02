@@ -8,7 +8,7 @@
  *      - 响应：{ code, msg, data }，code=0 成功，业务数据在 data 中
  *      - 有效期约 1 个月，需定期重新生成
  *
- *   2) Bearer token（旧/高级模式，WorkBuddy 同款 MCP）
+ *   2) Bearer token（旧/高级模式，MCP）
  *      - 凭证来源：ima 网页版 DevTools Network 面板 Authorization: Bearer 后的字符串
  *      - 请求头：Authorization: Bearer <token>
  *      - 端点：https://ima.qq.com/mcp（JSON-RPC）
